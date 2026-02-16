@@ -1,0 +1,1 @@
+import React from "react"; import ReactDOM from "react-dom/client"; import CreditStackerProductionUI from "./CreditStackerProductionUI"; import "./index.css"; ReactDOM.createRoot(document.getElementById("root")).render(<React.StrictMode><CreditStackerProductionUI /></React.StrictMode>);
