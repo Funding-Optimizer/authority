@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 240" role="img" aria-label="START / IGNITE button">
+  <!-- Canonical recurring brand trigger: the START / IGNITE button.
+       Idle pulse -> press -> green ring expansion -> transition. -->
+  <defs>
+    <linearGradient id="btnFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5dffa6"/>
+      <stop offset="0.46" stop-color="#2bff88"/>
+      <stop offset="1" stop-color="#06c95a"/>
+    </linearGradient>
+    <filter id="btnGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#2bff88" flood-opacity="0.75"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="26" flood-color="#2bff88" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <!-- ignition ring -->
+  <circle cx="280" cy="120" r="108" fill="none" stroke="#2bff88" stroke-width="2.5" opacity="0.55"/>
+  <!-- button body -->
+  <g filter="url(#btnGlow)">
+    <rect x="120" y="64" width="320" height="112" rx="16"
+          fill="url(#btnFill)" stroke="#ffffff" stroke-opacity="0.6" stroke-width="4"/>
+  </g>
+  <text x="280" y="138" text-anchor="middle"
+        font-family="'SF Mono','Consolas',monospace" font-weight="700"
+        font-size="46" letter-spacing="14" fill="#03130b">IGNITE</text>
+</svg>

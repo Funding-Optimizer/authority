@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════
-   render.mjs — FUNDINGGAUG≡™ launch video build pipeline
+   render.mjs — FUNDINGGAUG≡™ / FUNDINGOPTIMI⚡≡R™ motion-brand build
    ───────────────────────────────────────────────────────────────────
-   1. Capture the 60s cinematic scene at 1920x1080 and 1080x1920.
-   2. Encode both with ffmpeg into master videos.
-   3. Synthesize a subtle cinematic audio bed and mux it in.
-   4. Cut the 6s / 10s / 15s / 30s derivatives from the 16:9 master.
-   5. Extract the poster-frame PNG.
-   All outputs land in ../video-output/.
+   For every named cut in scenes/film.html:
+     1. capture the cut at 1920x1080 (and 1080x1920 for major ads)
+     2. encode with ffmpeg
+     3. synthesize + mux a subtle cinematic audio bed
+     4. extract a poster frame
+   Finally regenerate SOURCE-MANIFEST.md. Outputs -> ../video-output/.
    ═══════════════════════════════════════════════════════════════════ */
 import {captureScene} from './capture.mjs';
 import {execFileSync} from 'child_process';
@@ -14,15 +14,31 @@ import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 
-const HERE   = path.dirname(fileURLToPath(import.meta.url));
-const ROOT   = path.resolve(HERE, '..');
-const SCENE  = path.join(ROOT, 'scenes', 'fundinggauge-cinematic.html');
-const OUT    = path.join(ROOT, 'video-output');
-const TMP    = path.join(ROOT, '.tmp-frames');
-const FPS    = 30;
-const DUR    = 60;
+const HERE  = path.dirname(fileURLToPath(import.meta.url));
+const ROOT  = path.resolve(HERE, '..');
+const SCENE = path.join(ROOT, 'scenes', 'film.html');
+const OUT   = path.join(ROOT, 'video-output');
+const TMP   = path.join(ROOT, '.tmp-frames');
+const FPS   = 30;
+
+/* cut -> whether a 9:16 vertical social cut is also produced */
+const CUTS = [
+  {cut:'bumper-06s',             vertical:false},
+  {cut:'ignition-identity-10s',  vertical:false},
+  {cut:'founder-ad-15s',         vertical:true },
+  {cut:'broker-ad-15s',          vertical:true },
+  {cut:'event-ad-15s',           vertical:true },
+  {cut:'public-launch-30s',      vertical:true },
+  {cut:'enterprise-trailer-45s', vertical:true },
+  {cut:'optimizer-trailer-30s',  vertical:true },
+];
+const CONCURRENCY = 2;
 
 fs.mkdirSync(OUT, {recursive: true});
+fs.mkdirSync(TMP, {recursive: true});
+/* fresh canonical output set */
+for (const f of fs.readdirSync(OUT))
+  if (/\.(mp4|png)$/.test(f)) fs.rmSync(path.join(OUT, f));
 
 function ff(args, label) {
   console.log('  ffmpeg: ' + label);
@@ -30,108 +46,181 @@ function ff(args, label) {
                {stdio: ['ignore', 'inherit', 'inherit']});
 }
 
-/* ── 1+2. CAPTURE + ENCODE ──────────────────────────────────────── */
-function encodeMaster(name, frameDir, width, height) {
-  const silent = path.join(OUT, `_${name}_silent.mp4`);
-  ff(['-framerate', String(FPS), '-i', path.join(frameDir, '%05d.jpg'),
-      '-c:v', 'libx264', '-preset', 'medium', '-crf', '18',
-      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', silent],
-     `encode ${name} (${width}x${height})`);
-  fs.rmSync(frameDir, {recursive: true, force: true});
-  return silent;
-}
-
-/* ── 3. AUDIO BED (synthesized — no source track supplied) ──────── */
-function buildAudio() {
-  const wav = path.join(TMP, 'bed.wav');
-  fs.mkdirSync(TMP, {recursive: true});
+/* ── audio bed, synthesized + cached per integer duration ───────── */
+const audioCache = new Map();
+function audioFor(durSec) {
+  const key = Math.round(durSec);
+  if (audioCache.has(key)) return audioCache.get(key);
+  const wav = path.join(TMP, `bed-${key}.wav`);
+  let result = null;
   try {
-    ff(['-f', 'lavfi', '-i', `sine=frequency=55:duration=${DUR}`,
-        '-f', 'lavfi', '-i', `sine=frequency=110:duration=${DUR}`,
-        '-f', 'lavfi', '-i', `anoisesrc=duration=${DUR}:color=brown:amplitude=0.3`,
+    const fadeOut = Math.max(0, key - 3);
+    ff(['-f', 'lavfi', '-i', `sine=frequency=55:duration=${key}`,
+        '-f', 'lavfi', '-i', `sine=frequency=110:duration=${key}`,
+        '-f', 'lavfi', '-i', `anoisesrc=duration=${key}:color=brown:amplitude=0.3`,
         '-filter_complex',
         '[0]volume=0.17,tremolo=f=0.22:d=0.45[d1];' +
         '[1]volume=0.07[d2];' +
         '[2]volume=0.11,highpass=f=110,lowpass=f=820[d3];' +
         '[d1][d2][d3]amix=inputs=3:normalize=0,' +
-        'afade=t=in:d=2.5,afade=t=out:st=57:d=3,' +
+        `afade=t=in:d=2,afade=t=out:st=${fadeOut}:d=3,` +
         'alimiter=limit=0.9,volume=0.75[a]',
-        '-map', '[a]', wav], 'synthesize audio bed');
-    return wav;
+        '-map', '[a]', wav], `audio bed ${key}s`);
+    result = wav;
   } catch (e) {
-    console.warn('  audio synthesis failed — videos will be silent:', e.message);
-    return null;
+    console.warn('  audio synthesis failed — silent:', e.message);
   }
+  audioCache.set(key, result);
+  return result;
 }
 
-/* mux audio into a silent master; returns final path */
-function mux(silent, audio, finalName) {
-  const final = path.join(OUT, finalName);
+/* ── build one render job: capture -> encode -> mux -> poster ───── */
+async function buildJob(job) {
+  const {cut, width, height, label} = job;
+  const tag = `${cut}-${width}x${height}`;
+  const frameDir = path.join(TMP, tag);
+  const cap = await captureScene({
+    scene: SCENE, cut, out: frameDir, width, height, fps: FPS, label,
+  });
+
+  const silent = path.join(OUT, `_${tag}.mp4`);
+  ff(['-framerate', String(FPS), '-i', path.join(frameDir, '%05d.jpg'),
+      '-c:v', 'libx264', '-preset', 'medium', '-crf', '18',
+      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', silent],
+     `encode ${tag}`);
+  fs.rmSync(frameDir, {recursive: true, force: true});
+
+  const final = path.join(OUT, `fg-${tag}.mp4`);
+  const audio = audioFor(cap.duration);
   if (audio) {
-    ff(['-i', silent, '-i', audio,
-        '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', final],
-       `mux audio -> ${finalName}`);
+    ff(['-i', silent, '-i', audio, '-c:v', 'copy', '-c:a', 'aac',
+        '-b:a', '192k', '-shortest', final], `mux ${tag}`);
+    fs.rmSync(silent, {force: true});
   } else {
-    fs.copyFileSync(silent, final);
+    fs.renameSync(silent, final);
   }
-  fs.rmSync(silent, {force: true});
-  return final;
+
+  const posterSec = Math.min(cap.duration - 0.1, (cap.posterMs || 0) / 1000);
+  ff(['-ss', String(posterSec), '-i', final, '-frames:v', '1',
+      path.join(OUT, `fg-${tag}-poster.png`)], `poster ${tag}`);
+
+  return {tag, cutInfo: cap.cutInfo, width, height, file: `fg-${tag}.mp4`};
 }
 
-/* ── 4. DERIVATIVE CUTS (single-segment trims of the 16:9 master) ─ */
-const CUTS = [
-  {name: 'fundinggauge-06s-bumper.mp4',     start: 54, len: 6 },
-  {name: 'fundinggauge-10s-ignition.mp4',   start: 0,  len: 10},
-  {name: 'fundinggauge-15s-partner-ad.mp4', start: 30, len: 15},
-  {name: 'fundinggauge-30s-launch.mp4',     start: 0,  len: 30},
-];
-function buildCuts(master) {
-  for (const c of CUTS) {
-    const fadeAt = Math.max(0, c.len - 0.4);
-    ff(['-ss', String(c.start), '-i', master, '-t', String(c.len),
-        '-vf', `fade=in:0:8,fade=out:st=${fadeAt}:d=0.4`,
-        '-af', `afade=t=in:d=0.25,afade=t=out:st=${fadeAt}:d=0.4`,
-        '-c:v', 'libx264', '-preset', 'medium', '-crf', '19',
-        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k',
-        '-movflags', '+faststart', path.join(OUT, c.name)],
-       `cut ${c.name}`);
-  }
+/* ── concurrency pool ───────────────────────────────────────────── */
+async function pool(jobs, n, worker) {
+  const results = [];
+  let idx = 0;
+  await Promise.all(Array.from({length: n}, async () => {
+    while (idx < jobs.length) {
+      const j = jobs[idx++];
+      results.push(await worker(j));
+    }
+  }));
+  return results;
 }
 
-/* ── 5. POSTER FRAME ────────────────────────────────────────────── */
-function buildPoster(master) {
-  ff(['-ss', '17', '-i', master, '-frames:v', '1',
-      path.join(OUT, 'fundinggauge-poster-frame.png')], 'poster frame @17s');
+/* ── SOURCE MANIFEST ────────────────────────────────────────────── */
+function writeManifest(byCut) {
+  const wm = b => b === 'optimizer'
+    ? 'brand/fundingoptimizer-wordmark.svg' : 'brand/fundinggauge-wordmark.svg';
+  let md = `# FUNDINGGAUG≡™ / FUNDINGOPTIMI⚡≡R™ — Source Manifest
+
+Canonical motion-brand video system. Generated by \`scripts/render.mjs\`.
+Every scene is rendered from \`scenes/film.html\` (modules in
+\`scenes/modules.js\`); no stock footage is used.
+
+## Brand inputs (source of truth)
+
+| Asset | File |
+|-------|------|
+| Brand tokens | \`brand/brand-tokens.css\` |
+| Logo rules | \`brand/logo-rules.md\` |
+| FUNDINGGAUG≡™ wordmark | \`brand/fundinggauge-wordmark.svg\` |
+| FUNDINGOPTIMI⚡≡R™ wordmark | \`brand/fundingoptimizer-wordmark.svg\` |
+| ≡ mark | \`brand/eq-mark.svg\` |
+| ⚡ bolt | \`brand/bolt-mark.svg\` |
+| START / IGNITE button | \`brand/ignite-button.svg\` |
+
+> The uploaded canonical logo / button / insert imagery referenced by the
+> brief were not present in the repo or build container. Per direction,
+> canonical SVG wordmarks were authored in \`brand/\` (chrome letters,
+> three equal bright-white glowing ≡ bars, green ⚡) and the photo inserts
+> were replaced with brand-graded abstract thought-flash inserts
+> (\`numbers\`, \`doubt\`, \`chalk\`) generated by \`scenes/modules.js\`.
+
+## Outputs
+
+`;
+  for (const c of byCut) {
+    const ci = c.h.cutInfo;
+    md += `### ${ci.name}
+
+- **Audience:** ${ci.audience}
+- **Offer:** ${ci.offer}
+- **CTA:** ${ci.cta}
+- **Duration:** ${ci.duration}s
+- **Logo asset:** \`${wm(ci.brand)}\` (+ \`brand/ignite-button.svg\` ignition moment)
+- **Source scenes:** ${ci.scenes.join(' → ')}
+- **Insert assets:** ${ci.inserts.length ? ci.inserts.join(', ') + ' (abstract, brand-graded)' : 'none'}
+- **Files:**
+    - \`video-output/${c.h.file}\` — 1920×1080 master
+    - \`video-output/fg-${c.h.tag}-poster.png\` — poster frame
+${c.v ? `    - \`video-output/${c.v.file}\` — 1080×1920 vertical social cut
+    - \`video-output/fg-${c.v.tag}-poster.png\` — vertical poster frame
+` : ''}
+`;
+  }
+  md += `## Insert (thought-flash) assets
+
+Abstract, brand-graded inserts stand in for the teacher / numbers /
+confused-person imagery. Each is dark, green/chrome, HUD-framed and
+glitched into the brand world. Caps observed: ≤2 per 15s cut, ≤4 per
+30–45s cut.
+
+| Kind | Concept |
+|------|---------|
+| \`numbers\` | number-storm — figures the founder can't read |
+| \`doubt\` | confused-silhouette — uncertainty before the scan |
+| \`chalk\` | chalkboard abstraction — being "taught" the hard way |
+
+## Compliance
+
+- ✅ Spelling FUNDINGGAUG≡™ / FUNDINGOPTIMI⚡≡R™ exact, everywhere
+- ✅ Chrome/silver letters only
+- ✅ ≡ = three equal bright-white glowing bars (never green/blue/gray)
+- ✅ ⚡ green ignition accent, only inside FUNDINGOPTIMI⚡≡R™
+- ✅ ™ chrome/white, never green
+- ✅ Green reserved for ignition, START/IGNITE button, progress, scoring, CTA
+- ✅ Every cut contains a START/IGNITE button moment (\`ignition\` module)
+- ✅ No "TURBO MODE" language
+- ✅ No generic SaaS stock graphics
+`;
+  fs.writeFileSync(path.join(ROOT, 'SOURCE-MANIFEST.md'), md);
+  console.log('  wrote SOURCE-MANIFEST.md');
 }
 
 /* ── RUN ────────────────────────────────────────────────────────── */
 (async () => {
   const t0 = Date.now();
-  console.log('━━ FUNDINGGAUG≡™ launch video build ━━');
+  console.log('━━ FUNDINGGAUG≡™ / FUNDINGOPTIMI⚡≡R™ motion-brand build ━━');
 
-  const audio = buildAudio();
+  const jobs = [];
+  for (const c of CUTS) {
+    jobs.push({cut: c.cut, width: 1920, height: 1080, label: `${c.cut} 16:9`});
+    if (c.vertical)
+      jobs.push({cut: c.cut, width: 1080, height: 1920, label: `${c.cut} 9:16`});
+  }
+  console.log(`▸ ${jobs.length} render jobs, concurrency ${CONCURRENCY}`);
 
-  console.log('▸ capturing 1920x1080 + 1080x1920 in parallel');
-  const hDir = path.join(TMP, 'master-1920x1080');
-  const vDir = path.join(TMP, 'master-1080x1920');
-  await Promise.all([
-    captureScene({scene: SCENE, out: hDir, width: 1920, height: 1080,
-                  fps: FPS, duration: DUR, label: '16:9'}),
-    captureScene({scene: SCENE, out: vDir, width: 1080, height: 1920,
-                  fps: FPS, duration: DUR, label: '9:16'}),
-  ]);
+  const done = await pool(jobs, CONCURRENCY, buildJob);
 
-  console.log('▸ encoding masters');
-  const mSilent = encodeMaster('master-1920x1080', hDir, 1920, 1080);
-  const vSilent = encodeMaster('master-1080x1920', vDir, 1080, 1920);
-  const master  = mux(mSilent, audio, 'fundinggauge-master-1920x1080.mp4');
-  mux(vSilent, audio, 'fundinggauge-master-1080x1920.mp4');
-
-  console.log('▸ derivative cuts');
-  buildCuts(master);
-
-  console.log('▸ poster frame');
-  buildPoster(master);
+  /* group results by cut for the manifest */
+  const byCut = CUTS.map(c => ({
+    h: done.find(d => d.tag === `${c.cut}-1920x1080`),
+    v: done.find(d => d.tag === `${c.cut}-1080x1920`),
+  }));
+  writeManifest(byCut);
 
   fs.rmSync(TMP, {recursive: true, force: true});
   console.log(`━━ done in ${((Date.now() - t0) / 1000 / 60).toFixed(1)} min ━━`);

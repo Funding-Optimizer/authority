@@ -1,37 +1,61 @@
-# FUNDINGGAUG≡™ Launch Video Engine
+# FUNDINGGAUG≡™ / FUNDINGOPTIMI⚡≡R™ — Motion-Brand Video Engine
 
-A deterministic HTML → video pipeline that renders the FUNDINGGAUG≡™
-cinematic launch master and all derivative cuts.
+A deterministic HTML → video system that renders the canonical
+FUNDINGGAUG≡™ and FUNDINGOPTIMI⚡≡R™ launch films and every derivative
+social cut from one reusable set of scene modules.
 
 ## Layout
 
 ```
 fundinggauge-video-engine/
+├── brand/
+│   ├── brand-tokens.css            canonical colour / glow / type / timing
+│   ├── logo-rules.md               exact logo usage rules
+│   ├── fundinggauge-wordmark.svg    canonical FUNDINGGAUG≡™ lockup
+│   ├── fundingoptimizer-wordmark.svg canonical FUNDINGOPTIMI⚡≡R™ lockup
+│   ├── eq-mark.svg                 the ≡ mark (three white bars)
+│   ├── bolt-mark.svg               the ⚡ ignition bolt
+│   └── ignite-button.svg           the recurring START/IGNITE button
 ├── scenes/
-│   └── fundinggauge-cinematic.html   60s deterministic cinematic scene
+│   ├── film.html                   harness — assembles named cuts
+│   ├── modules.js                  reusable scene modules + inserts
+│   └── scene-styles.css            scene layout (imports brand tokens)
 ├── scripts/
-│   ├── capture.mjs                   frame-stepped Puppeteer capture
-│   └── render.mjs                    full build pipeline
-├── video-output/                     all rendered deliverables
-├── SOURCE-MANIFEST.md                scene → asset provenance
+│   ├── capture.mjs                 frame-stepped Puppeteer capture
+│   └── render.mjs                  full multi-cut build pipeline
+├── video-output/                   rendered deliverables
+├── SOURCE-MANIFEST.md              per-output audience / offer / CTA / sources
 └── README.md
 ```
 
-## How it works
+## Scene modules (`scenes/modules.js`)
 
-`scenes/fundinggauge-cinematic.html` drives every visual from a single pure
-function, `window.__render(ms)`. Opened normally it autoplays a live
-preview; opened with `?render=1` it exposes the seek function so the
-capture script can step it frame-by-frame. This makes renders 100%
-reproducible regardless of host speed.
+`logoBoot` · `ignition` (recurring START/IGNITE button) · `scoreGauge` ·
+`stackingSequence` · `reportUnlock` · `brokerDashboard` · `eventKiosk` ·
+`enterpriseGrid` · `optimizerCommand` · `endCard`, plus abstract
+`inserts` (numbers / doubt / chalk thought-flashes).
 
-`render.mjs`:
+Each module is `{ build(layer,opts), update(layer,lt,dur,opts) }`. `build`
+runs once; `update` is a pure function of local time, so renders are 100%
+reproducible. The canonical wordmarks are produced only by
+`buildWordmark()` — see `brand/logo-rules.md`.
 
-1. Captures the scene at 1920×1080 and 1080×1920 (30 fps, 60s).
-2. Encodes each with ffmpeg (libx264, CRF 18, yuv420p).
-3. Synthesizes a subtle cinematic audio bed and muxes it in.
-4. Cuts the 6s / 10s / 15s / 30s derivatives from the 16:9 master.
-5. Extracts the poster-frame PNG.
+## Cuts
+
+Defined in the `CUTS` table in `scenes/film.html`; selected with
+`?cut=<name>`. Each cut is an ordered list of scene segments (always
+including an `ignition` button moment) plus capped insert flashes.
+
+| Cut | Length | 9:16 vertical |
+|-----|--------|---------------|
+| `bumper-06s` | 6s | — |
+| `ignition-identity-10s` | 10s | — |
+| `founder-ad-15s` | 15s | ✓ |
+| `broker-ad-15s` | 15s | ✓ |
+| `event-ad-15s` | 15s | ✓ |
+| `public-launch-30s` | 30s | ✓ |
+| `enterprise-trailer-45s` | 45s | ✓ |
+| `optimizer-trailer-30s` | 30s | ✓ |
 
 ## Build
 
@@ -42,23 +66,21 @@ npx puppeteer browsers install chrome   # one-time
 node scripts/render.mjs
 ```
 
-Requires `ffmpeg` on `PATH`. Outputs land in `video-output/`.
+Requires `ffmpeg` on `PATH`. `render.mjs` captures every cut at 1920×1080
+(and 1080×1920 for the major ads), encodes with ffmpeg, muxes a
+synthesized cinematic audio bed, extracts poster frames, and regenerates
+`SOURCE-MANIFEST.md`. Outputs land in `video-output/`.
 
-## Single capture (manual)
+## Single capture / live preview
 
 ```bash
-node scripts/capture.mjs \
-  --scene=scenes/fundinggauge-cinematic.html \
-  --out=.frames --width=1920 --height=1080 --fps=30 --duration=60
+# one cut, manual
+node scripts/capture.mjs --scene=scenes/film.html --cut=founder-ad-15s \
+  --out=.frames --width=1920 --height=1080 --fps=30
+
+# live preview in a browser
+open "scenes/film.html?cut=public-launch-30s"
 ```
 
-## Editing scenes
-
-Scene timings live in the `SC` table and the per-scene blocks of the
-`render()` function in `fundinggauge-cinematic.html`. To swap in the
-canonical `fundinggauge-cinematic-v12` / `FUNDINGGAUGE-ULTIMATE-STANDALONE`
-HTML, place them in `scenes/` exposing the same `window.__render(ms)` /
-`window.__ready` contract and point `render.mjs` at them — no other change
-needed.
-
-See `SOURCE-MANIFEST.md` for brand rules and provenance.
+See `brand/logo-rules.md` for logo rules and `SOURCE-MANIFEST.md` for the
+audience / offer / CTA / source mapping of every output.

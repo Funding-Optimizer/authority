@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1360 210" role="img" aria-label="FUNDINGGAUG≡ trademark">
+  <!-- CANONICAL WORDMARK — FUNDINGGAUG≡™
+       Chrome/silver letters. ≡ = three equal bright-white glowing bars.
+       ™ = chrome/white. See logo-rules.md. Do not recreate independently. -->
+  <defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#ffffff"/>
+      <stop offset="0.14" stop-color="#cbd3da"/>
+      <stop offset="0.26" stop-color="#ffffff"/>
+      <stop offset="0.44" stop-color="#7e878f"/>
+      <stop offset="0.54" stop-color="#eef2f5"/>
+      <stop offset="0.66" stop-color="#aab2bb"/>
+      <stop offset="0.80" stop-color="#ffffff"/>
+      <stop offset="1"    stop-color="#9aa3ac"/>
+    </linearGradient>
+    <linearGradient id="tmChrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#aab2bb"/>
+    </linearGradient>
+    <filter id="eqGlowW" x="-70%" y="-70%" width="240%" height="240%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ffffff" flood-opacity="1"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="#ffffff" flood-opacity="0.7"/>
+    </filter>
+  </defs>
+
+  <text x="30" y="153"
+        font-family="'Arial Narrow','Helvetica Neue',Arial,sans-serif"
+        font-weight="700" font-size="150" letter-spacing="2"
+        fill="url(#chrome)">FUNDINGGAUG</text>
+
+  <!-- ≡ mark : three equal bright-white glowing bars -->
+  <g filter="url(#eqGlowW)" fill="#ffffff">
+    <rect x="1205" y="55"  width="62" height="19" rx="3"/>
+    <rect x="1205" y="90"  width="62" height="19" rx="3"/>
+    <rect x="1205" y="125" width="62" height="19" rx="3"/>
+  </g>
+
+  <!-- ™ : chrome / white, never green -->
+  <text x="1281" y="74"
+        font-family="'Arial Narrow','Helvetica Neue',Arial,sans-serif"
+        font-weight="700" font-size="46" fill="url(#tmChrome)">&#8482;</text>
+</svg>

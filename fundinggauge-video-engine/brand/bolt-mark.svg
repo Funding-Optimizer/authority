@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 165" role="img" aria-label="Ignition bolt mark">
+  <!-- Canonical ⚡ bolt: green ignition accent. Used only inside FUNDINGOPTIMI⚡≡R™. -->
+  <defs>
+    <linearGradient id="boltFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5dffa6"/>
+      <stop offset="0.5" stop-color="#2bff88"/>
+      <stop offset="1" stop-color="#06c95a"/>
+    </linearGradient>
+    <filter id="boltGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#2bff88" flood-opacity="0.9"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#2bff88" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <path filter="url(#boltGlow)" fill="url(#boltFill)"
+        d="M64,6 L18,92 L48,92 L40,159 L94,66 L62,66 Z"/>
+</svg>

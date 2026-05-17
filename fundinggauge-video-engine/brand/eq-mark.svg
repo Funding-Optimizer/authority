@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 150" role="img" aria-label="Equal-bar mark">
+  <!-- Canonical ≡ mark: three equal bright-white glowing bars. Never green. -->
+  <defs>
+    <filter id="eqGlow" x="-70%" y="-70%" width="240%" height="240%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ffffff" flood-opacity="1"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#ffffff" flood-opacity="0.7"/>
+    </filter>
+  </defs>
+  <g filter="url(#eqGlow)" fill="#ffffff">
+    <rect x="20" y="27"  width="120" height="22" rx="4"/>
+    <rect x="20" y="64"  width="120" height="22" rx="4"/>
+    <rect x="20" y="101" width="120" height="22" rx="4"/>
+  </g>
+</svg>

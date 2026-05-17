@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1490 210" role="img" aria-label="FUNDINGOPTIMI bolt equal R trademark">
+  <!-- CANONICAL WORDMARK — FUNDINGOPTIMI⚡≡R™
+       Chrome/silver letters. ⚡ = green ignition bolt. ≡ = three equal
+       bright-white glowing bars. ™ = chrome/white. See logo-rules.md. -->
+  <defs>
+    <linearGradient id="chromeO" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#ffffff"/>
+      <stop offset="0.14" stop-color="#cbd3da"/>
+      <stop offset="0.26" stop-color="#ffffff"/>
+      <stop offset="0.44" stop-color="#7e878f"/>
+      <stop offset="0.54" stop-color="#eef2f5"/>
+      <stop offset="0.66" stop-color="#aab2bb"/>
+      <stop offset="0.80" stop-color="#ffffff"/>
+      <stop offset="1"    stop-color="#9aa3ac"/>
+    </linearGradient>
+    <linearGradient id="tmChromeO" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#aab2bb"/>
+    </linearGradient>
+    <linearGradient id="boltFillO" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5dffa6"/>
+      <stop offset="0.5" stop-color="#2bff88"/>
+      <stop offset="1" stop-color="#06c95a"/>
+    </linearGradient>
+    <filter id="eqGlowO" x="-70%" y="-70%" width="240%" height="240%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ffffff" flood-opacity="1"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="#ffffff" flood-opacity="0.7"/>
+    </filter>
+    <filter id="boltGlowO" x="-80%" y="-80%" width="260%" height="260%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4"  flood-color="#2bff88" flood-opacity="0.9"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#2bff88" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <text x="30" y="153"
+        font-family="'Arial Narrow','Helvetica Neue',Arial,sans-serif"
+        font-weight="700" font-size="132" letter-spacing="2"
+        fill="url(#chromeO)">FUNDINGOPTIMI</text>
+
+  <!-- ⚡ bolt : green ignition accent -->
+  <g transform="translate(1120,22) scale(0.86)" filter="url(#boltGlowO)">
+    <path fill="url(#boltFillO)" d="M64,6 L18,92 L48,92 L40,159 L94,66 L62,66 Z"/>
+  </g>
+
+  <!-- ≡ mark : three equal bright-white glowing bars -->
+  <g filter="url(#eqGlowO)" fill="#ffffff">
+    <rect x="1230" y="67"  width="58" height="17" rx="3"/>
+    <rect x="1230" y="98"  width="58" height="17" rx="3"/>
+    <rect x="1230" y="129" width="58" height="17" rx="3"/>
+  </g>
+
+  <text x="1304" y="153"
+        font-family="'Arial Narrow','Helvetica Neue',Arial,sans-serif"
+        font-weight="700" font-size="132" letter-spacing="2"
+        fill="url(#chromeO)">R</text>
+
+  <!-- ™ : chrome / white, never green -->
+  <text x="1415" y="78"
+        font-family="'Arial Narrow','Helvetica Neue',Arial,sans-serif"
+        font-weight="700" font-size="42" fill="url(#tmChromeO)">&#8482;</text>
+</svg>

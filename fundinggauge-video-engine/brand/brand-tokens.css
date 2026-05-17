@@ -1,0 +1,191 @@
+/* ═══════════════════════════════════════════════════════════════════
+   FUNDINGGAUG≡™ / FUNDINGOPTIMI⚡≡R™ — CANONICAL BRAND TOKENS
+   ───────────────────────────────────────────────────────────────────
+   Single source of truth for colour, glow, typography, timing and the
+   recurring START/IGNITE button treatment. Every scene imports this
+   file; no scene may hard-code brand values.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* ── CARBON / COCKPIT ATMOSPHERE ─────────────────────────────── */
+  --fg-carbon-0:#05070a;   /* deepest black            */
+  --fg-carbon-1:#0a0d12;   /* panel black              */
+  --fg-carbon-2:#11151c;   /* raised surface           */
+  --fg-carbon-3:#182030;   /* elevated / glass base    */
+
+  /* ── CHROME / SILVER WORDMARK (letters only) ─────────────────── */
+  --fg-chrome-hi:#ffffff;
+  --fg-chrome-1:#eef2f5;
+  --fg-chrome-2:#c3ccd4;
+  --fg-chrome-3:#7c858e;
+  --fg-chrome-4:#454b52;
+  --fg-chrome-gradient:linear-gradient(168deg,
+    #ffffff 0%,#cbd3da 14%,#ffffff 26%,#7e878f 44%,
+    #eef2f5 54%,#aab2bb 66%,#ffffff 80%,#9aa3ac 100%);
+
+  /* ── GREEN — IGNITION ONLY ───────────────────────────────────────
+     Reserved for: ignition, START/IGNITE button, progress, scoring,
+     approval glow, CTA states. Never used for the ≡ mark or ™.       */
+  --fg-green:#2bff88;
+  --fg-green-bright:#5dffa6;
+  --fg-green-deep:#06c95a;
+  --fg-green-dim:#0e3d27;
+  --fg-green-glow:rgba(43,255,136,.55);
+
+  /* ── ≡ MARK — ALWAYS BRIGHT WHITE, NEVER GREEN ───────────────── */
+  --fg-eq-white:#ffffff;
+  --fg-eq-glow-s:0 0 4px #ffffff;
+  --fg-eq-glow-l:0 0 13px rgba(255,255,255,.85);
+
+  /* ── INK ─────────────────────────────────────────────────────── */
+  --fg-ink:rgba(255,255,255,.88);
+  --fg-ink-soft:rgba(255,255,255,.52);
+  --fg-ink-faint:rgba(255,255,255,.30);
+
+  /* ── GLOW RECIPES ────────────────────────────────────────────── */
+  --fg-glow-green-s:0 0 12px rgba(43,255,136,.50);
+  --fg-glow-green-m:0 0 26px rgba(43,255,136,.42);
+  --fg-glow-green-l:0 0 60px rgba(43,255,136,.32);
+
+  /* ── TYPOGRAPHY ──────────────────────────────────────────────── */
+  --fg-font-display:'Arial Narrow','Helvetica Neue',Arial,sans-serif;
+  --fg-font-mono:ui-monospace,'SF Mono','Menlo','Consolas','Liberation Mono',monospace;
+  --fg-track-wide:.34em;     /* HUD label tracking      */
+  --fg-track-mid:.18em;
+
+  /* ── MOTION TIMING (canonical) ───────────────────────────────── */
+  --fg-t-flash:120ms;        /* thought-flash insert    */
+  --fg-t-fast:240ms;         /* scene crossfade         */
+  --fg-t-base:420ms;
+  --fg-t-slow:760ms;
+  --fg-ease-out:cubic-bezier(.16,.84,.34,1);
+  --fg-ease-io:cubic-bezier(.65,0,.35,1);
+
+  /* ── BUTTON TREATMENT ────────────────────────────────────────── */
+  --fg-btn-radius:1.2vmin;
+}
+
+/* ═══ STAGE / ATMOSPHERE ══════════════════════════════════════════ */
+.fg-stage{position:fixed;inset:0;overflow:hidden;background:var(--fg-carbon-0);}
+
+.fg-carbon{
+  position:absolute;inset:0;
+  background-color:var(--fg-carbon-0);
+  background-image:
+    repeating-linear-gradient(45deg,#0d1015 0 2px,transparent 2px 6px),
+    repeating-linear-gradient(-45deg,#0a0c11 0 2px,transparent 2px 6px),
+    radial-gradient(120% 90% at 50% 38%,#11151c 0%,#07090c 55%,#040506 100%);
+  background-size:8px 8px,8px 8px,100% 100%;
+}
+.fg-vignette{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(130% 100% at 50% 46%,transparent 38%,rgba(0,0,0,.80) 100%);
+}
+.fg-scan{
+  position:absolute;inset:0;pointer-events:none;opacity:.32;mix-blend-mode:multiply;
+  background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.22) 2px 4px);
+}
+.fg-grain{
+  position:absolute;inset:0;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ═══ CHROME WORDMARK ═════════════════════════════════════════════
+   Canonical wordmark structure (see logo-rules.md):
+   <span class="fg-wordmark">
+     <span class="fg-chrome">FUNDINGGAUG</span>
+     <span class="fg-eq"><i></i><i></i><i></i></span>
+     <span class="fg-tm">™</span>
+   </span>                                                            */
+.fg-wordmark{
+  font-family:var(--fg-font-display);font-weight:700;
+  letter-spacing:.015em;white-space:nowrap;
+  display:inline-flex;align-items:baseline;
+}
+.fg-chrome{
+  font-family:var(--fg-font-display);font-weight:700;
+  background:var(--fg-chrome-gradient);background-size:240% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  -webkit-text-stroke:.6px rgba(255,255,255,.10);
+  filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));
+}
+
+/* ── ≡ MARK : three equal bright-white glowing bars ─────────────── */
+.fg-eq{
+  display:inline-flex;flex-direction:column;justify-content:center;
+  gap:.145em;width:.60em;height:.70em;
+  margin:0 .05em;vertical-align:-.02em;align-self:center;
+}
+.fg-eq > i{
+  display:block;height:.125em;width:100%;
+  background:var(--fg-eq-white);border-radius:1px;
+  box-shadow:var(--fg-eq-glow-s),var(--fg-eq-glow-l);
+}
+
+/* ── ⚡ BOLT : green ignition accent (FUNDINGOPTIMI⚡≡R™ only) ───── */
+.fg-bolt{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:.56em;height:.92em;margin:0 .02em;align-self:center;
+}
+.fg-bolt svg{width:100%;height:100%;display:block;
+  filter:drop-shadow(0 0 6px var(--fg-green-glow)) drop-shadow(0 0 14px rgba(43,255,136,.4));}
+.fg-bolt svg path{fill:var(--fg-green);}
+
+/* ── ™ : chrome / white, never green ────────────────────────────── */
+.fg-tm{
+  font-size:.32em;align-self:flex-start;margin-top:.15em;
+  background:linear-gradient(180deg,#ffffff,#aab2bb);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+/* ═══ START / IGNITE BUTTON (recurring brand trigger) ═════════════ */
+.fg-btn{
+  position:relative;
+  font-family:var(--fg-font-mono);font-weight:700;
+  letter-spacing:.30em;color:#03130b;
+  padding:2.6vmin 6.4vmin;border-radius:var(--fg-btn-radius);
+  background:linear-gradient(180deg,var(--fg-green-bright),var(--fg-green) 46%,var(--fg-green-deep));
+  border:.3vmin solid rgba(255,255,255,.55);
+  box-shadow:var(--fg-glow-green-s),var(--fg-glow-green-m);
+}
+.fg-btn-ring{
+  position:absolute;left:50%;top:50%;
+  width:22vmin;height:22vmin;border-radius:50%;
+  border:.34vmin solid var(--fg-green);
+  transform:translate(-50%,-50%);pointer-events:none;
+}
+
+/* ═══ HUD ═════════════════════════════════════════════════════════ */
+.fg-hud-corner{position:absolute;width:5vmin;height:5vmin;
+  border:.28vmin solid rgba(43,255,136,.5);}
+.fg-hud-corner.tl{top:3.4vmin;left:3.4vmin;border-right:0;border-bottom:0;}
+.fg-hud-corner.tr{top:3.4vmin;right:3.4vmin;border-left:0;border-bottom:0;}
+.fg-hud-corner.bl{bottom:3.4vmin;left:3.4vmin;border-right:0;border-top:0;}
+.fg-hud-corner.br{bottom:3.4vmin;right:3.4vmin;border-left:0;border-top:0;}
+.fg-hud-tag{position:absolute;font-family:var(--fg-font-mono);
+  font-size:1.5vmin;letter-spacing:var(--fg-track-wide);color:rgba(43,255,136,.62);}
+
+.fg-kicker{
+  font-family:var(--fg-font-mono);font-size:1.9vmin;
+  letter-spacing:.44em;text-transform:uppercase;
+  color:var(--fg-green);text-shadow:var(--fg-glow-green-s);
+}
+.fg-headline{
+  font-family:var(--fg-font-display);font-weight:700;
+  text-align:center;line-height:1.04;letter-spacing:.01em;
+}
+
+/* ═══ LIQUID-GLASS CARD ═══════════════════════════════════════════ */
+.fg-card{
+  position:relative;
+  background:linear-gradient(155deg,rgba(20,28,38,.72),rgba(8,12,18,.72));
+  border:.22vmin solid rgba(43,255,136,.16);
+  border-radius:1.5vmin;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  overflow:hidden;
+}
+.fg-card::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(160deg,rgba(255,255,255,.06),transparent 42%);
+  pointer-events:none;
+}

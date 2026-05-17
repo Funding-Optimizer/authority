@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUNDINGGAUG≡™ / FUNDINGOPTIMI⚡≡R™ — Motion-Brand Film Harness</title>
+<link rel="stylesheet" href="../brand/brand-tokens.css">
+<link rel="stylesheet" href="scene-styles.css">
+<style>
+  html,body{width:100%;height:100%;margin:0;background:#000;overflow:hidden;}
+  #fx{position:absolute;inset:0;}
+  #scenes,#hud,#inserts{position:absolute;inset:0;}
+  #hud{pointer-events:none;opacity:0;}
+  #inserts{pointer-events:none;}
+  #fadeout{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;}
+</style>
+</head>
+<body>
+<div class="fg-stage" id="stage">
+  <div class="fg-carbon"></div>
+  <canvas id="fx"></canvas>
+  <div id="scenes"></div>
+  <div class="fg-scan"></div>
+  <div class="fg-grain"></div>
+  <div class="fg-vignette"></div>
+  <div id="hud">
+    <div class="fg-hud-corner tl"></div><div class="fg-hud-corner tr"></div>
+    <div class="fg-hud-corner bl"></div><div class="fg-hud-corner br"></div>
+    <div class="fg-hud-tag" style="top:3.0vmin;left:9.6vmin;">FG // SYS</div>
+    <div class="fg-hud-tag" style="top:3.0vmin;right:9.6vmin;">SCAN ACTIVE</div>
+    <div class="fg-hud-tag" id="hud-bl" style="bottom:3.2vmin;left:9.6vmin;color:rgba(255,255,255,.34);">FUNDINGGAUG≡™</div>
+    <div class="fg-hud-tag" style="bottom:3.2vmin;right:9.6vmin;color:rgba(255,255,255,.34);">MOTION SYSTEM</div>
+  </div>
+  <div id="inserts"></div>
+  <div id="fadeout"></div>
+</div>
+
+<script src="modules.js"></script>
+<script>
+"use strict";
+/* ═══ FILM HARNESS — assembles named cuts from reusable scene modules ══
+   Deterministic: window.__render(ms) is a pure function of time. Every
+   cut includes an `ignition` segment (the recurring START/IGNITE button
+   moment). Insert flashes obey the per-length caps (≤2 / 15s, ≤4 / 30–45s). */
+
+const FGH = FG.helpers;
+const {clamp, easeOut, env, mk} = FGH;
+const XF = 280;   /* scene crossfade (ms) */
+
+/* ── CUT LIBRARY ─────────────────────────────────────────────────── */
+const CUTS = {
+  'bumper-06s': {
+    target:6000, brand:'gauge',
+    audience:'All audiences', offer:'Brand identity', cta:'fundinggauge.com',
+    posterFrac:0.86,
+    segs:[
+      {mod:'logoBoot', w:2600, opts:{brand:'gauge'}},
+      {mod:'ignition', w:2100, opts:{}},
+      {mod:'endCard',  w:1900, opts:{brand:'gauge',cta:'Check your fundability.',url:'fundinggauge.com'}},
+    ], inserts:[],
+  },
+  'ignition-identity-10s': {
+    target:10000, brand:'gauge',
+    audience:'All audiences', offer:'Brand identity spot', cta:'Start your scan',
+    posterFrac:0.42,
+    segs:[
+      {mod:'logoBoot',   w:2700, opts:{brand:'gauge'}},
+      {mod:'ignition',   w:3400, opts:{}},
+      {mod:'scoreGauge', w:2200, opts:{}},
+      {mod:'endCard',    w:1700, opts:{brand:'gauge',cta:'Start your scan.',url:'fundinggauge.com'}},
+    ], inserts:[],
+  },
+  'founder-ad-15s': {
+    target:15000, brand:'gauge',
+    audience:'Founders / candidates',
+    offer:'Public Founder Edition — know your funding path before you apply',
+    cta:'Know before you apply', posterFrac:0.52,
+    segs:[
+      {mod:'logoBoot',     w:2000, opts:{brand:'gauge'}},
+      {mod:'ignition',     w:2500, opts:{}},
+      {mod:'scoreGauge',   w:3900, opts:{headline:'Know your funding path before you apply.'}},
+      {mod:'reportUnlock', w:3700, opts:{title:'YOUR FUNDING PATH'}},
+      {mod:'endCard',      w:2900, opts:{brand:'gauge',cta:'Know before you apply.',url:'fundinggauge.com'}},
+    ],
+    inserts:[
+      {atFrac:0.05, dur:300, kind:'doubt'},
+      {atFrac:0.33, dur:220, kind:'numbers'},
+    ],
+  },
+  'broker-ad-15s': {
+    target:15000, brand:'gauge',
+    audience:'Funding brokers',
+    offer:'Broker Edition — score candidates before wasting time',
+    cta:'Score before you spend time', posterFrac:0.46,
+    segs:[
+      {mod:'logoBoot',        w:1800, opts:{brand:'gauge'}},
+      {mod:'ignition',        w:2300, opts:{label:'Broker Ready'}},
+      {mod:'brokerDashboard', w:5400, opts:{}},
+      {mod:'scoreGauge',      w:2700, opts:{headline:'Score every candidate first.'}},
+      {mod:'endCard',         w:2800, opts:{brand:'gauge',cta:'Score before you spend time.',url:'fundinggauge.com'}},
+    ],
+    inserts:[
+      {atFrac:0.05, dur:260, kind:'numbers'},
+      {atFrac:0.44, dur:300, kind:'doubt'},
+    ],
+  },
+  'event-ad-15s': {
+    target:15000, brand:'gauge',
+    audience:'Event & expo organizers',
+    offer:'Event Edition — turn booth traffic into qualified funding intelligence',
+    cta:'Activate your booth', posterFrac:0.46,
+    segs:[
+      {mod:'logoBoot',          w:1800, opts:{brand:'gauge'}},
+      {mod:'ignition',          w:2300, opts:{label:'Booth Ready'}},
+      {mod:'eventKiosk',        w:5500, opts:{}},
+      {mod:'stackingSequence',  w:2700, opts:{title:'Captured As Intelligence'}},
+      {mod:'endCard',           w:2700, opts:{brand:'gauge',cta:'Activate your booth.',url:'fundinggauge.com'}},
+    ],
+    inserts:[
+      {atFrac:0.06, dur:260, kind:'chalk'},
+      {atFrac:0.42, dur:220, kind:'numbers'},
+    ],
+  },
+  'public-launch-30s': {
+    target:30000, brand:'gauge',
+    audience:'Public launch — all audiences',
+    offer:'FUNDINGGAUG≡™ public launch',
+    cta:'Check your fundability', posterFrac:0.38,
+    segs:[
+      {mod:'logoBoot',        w:3000, opts:{brand:'gauge'}},
+      {mod:'ignition',        w:3300, opts:{}},
+      {mod:'scoreGauge',      w:4800, opts:{}},
+      {mod:'stackingSequence',w:4400, opts:{}},
+      {mod:'reportUnlock',    w:4400, opts:{}},
+      {mod:'brokerDashboard', w:4400, opts:{headline:'Built for founders, brokers and partners.'}},
+      {mod:'endCard',         w:5700, opts:{brand:'gauge',cta:'Check your fundability.',url:'fundinggauge.com'}},
+    ],
+    inserts:[
+      {atFrac:0.04, dur:300, kind:'doubt'},
+      {atFrac:0.21, dur:220, kind:'numbers'},
+      {atFrac:0.43, dur:260, kind:'chalk'},
+      {atFrac:0.66, dur:200, kind:'numbers'},
+    ],
+  },
+  'enterprise-trailer-45s': {
+    target:45000, brand:'gauge',
+    audience:'Enterprise platform buyers',
+    offer:'Enterprise Platform — scoring API, white-label widget, dashboard, CRM sync, partner analytics',
+    cta:'Deploy the platform', posterFrac:0.62,
+    segs:[
+      {mod:'logoBoot',        w:3000, opts:{brand:'gauge'}},
+      {mod:'ignition',        w:3200, opts:{label:'Platform Ready'}},
+      {mod:'scoreGauge',      w:4400, opts:{headline:'One fundability engine.'}},
+      {mod:'brokerDashboard', w:4600, opts:{headline:'Score any candidate, at any scale.'}},
+      {mod:'eventKiosk',      w:4600, opts:{}},
+      {mod:'enterpriseGrid',  w:8800, opts:{}},
+      {mod:'reportUnlock',    w:4400, opts:{title:'WHITE-LABEL REPORT'}},
+      {mod:'stackingSequence',w:4000, opts:{title:'Partner Funding Stack'}},
+      {mod:'endCard',         w:8000, opts:{brand:'gauge',cta:'Deploy the platform.',url:'fundinggauge.com / enterprise'}},
+    ],
+    inserts:[
+      {atFrac:0.03, dur:300, kind:'doubt'},
+      {atFrac:0.19, dur:240, kind:'numbers'},
+      {atFrac:0.40, dur:260, kind:'chalk'},
+      {atFrac:0.62, dur:220, kind:'numbers'},
+    ],
+  },
+  'optimizer-trailer-30s': {
+    target:30000, brand:'optimizer',
+    audience:'Advisors & stack strategists',
+    offer:'FUNDINGOPTIMI⚡≡R™ — optimization command layer, advisory engine, stack strategy',
+    cta:'Command your stack', posterFrac:0.42,
+    segs:[
+      {mod:'logoBoot',         w:3000, opts:{brand:'optimizer'}},
+      {mod:'ignition',         w:3200, opts:{label:'Command Ready',cap:'ENGAGE OPTIMIZATION ENGINE'}},
+      {mod:'optimizerCommand', w:10800,opts:{}},
+      {mod:'stackingSequence', w:4800, opts:{title:'Stack Strategy'}},
+      {mod:'scoreGauge',       w:3200, opts:{headline:'Optimized, not guessed.',verdict:'OPTIMIZED · PEAK'}},
+      {mod:'endCard',          w:5000, opts:{brand:'optimizer',cta:'Command your stack.',url:'fundingoptimizer.com'}},
+    ],
+    inserts:[
+      {atFrac:0.04, dur:300, kind:'doubt'},
+      {atFrac:0.23, dur:220, kind:'numbers'},
+      {atFrac:0.46, dur:260, kind:'chalk'},
+      {atFrac:0.70, dur:200, kind:'numbers'},
+    ],
+  },
+};
+
+/* ── BUILD SELECTED CUT ──────────────────────────────────────────── */
+const params = new URLSearchParams(location.search);
+const CUT_NAME = params.get('cut') || 'public-launch-30s';
+const cut = CUTS[CUT_NAME];
+if (!cut) throw new Error('unknown cut: ' + CUT_NAME);
+
+const scenesEl = document.getElementById('scenes');
+const insertsEl = document.getElementById('inserts');
+
+/* scale segment weights so the cut hits its exact target length */
+const rawTotal = cut.segs.reduce((s, x) => s + x.w, 0);
+const scale = cut.target / rawTotal;
+let tcur = 0;
+const SEGS = cut.segs.map(s => {
+  const dur = s.w * scale;
+  const layer = mk('div', 'fg-layer');
+  scenesEl.appendChild(layer);
+  FG.modules[s.mod].build(layer, s.opts || {});
+  const seg = {mod:s.mod, opts:s.opts || {}, start:tcur, dur, layer};
+  tcur += dur;
+  return seg;
+});
+const INS = (cut.inserts || []).map(ins => {
+  const layer = mk('div', 'fg-layer');
+  layer.style.padding = '0';
+  insertsEl.appendChild(layer);
+  FG.inserts.build(layer, ins.kind);
+  layer.style.display = 'none';
+  return {layer, at:ins.atFrac * cut.target, dur:ins.dur, kind:ins.kind};
+});
+
+document.getElementById('hud-bl').textContent =
+  cut.brand === 'optimizer' ? 'FUNDINGOPTIMI⚡≡R™' : 'FUNDINGGAUG≡™';
+
+/* ── IGNITION PARTICLE FIELD ─────────────────────────────────────── */
+const cv = document.getElementById('fx'), cx = cv.getContext('2d');
+let CW = 0, CH = 0;
+function sizeCanvas(){ CW = cv.width = innerWidth; CH = cv.height = innerHeight; }
+addEventListener('resize', sizeCanvas); sizeCanvas();
+const NP = 90;
+function drawParticles(t, intensity){
+  cx.clearRect(0, 0, CW, CH);
+  const s = t / 1000;
+  for (let i = 0; i < NP; i++){
+    const speed = 20 + FGH.hash(i + 9) * 70;
+    const size  = .7 + FGH.hash(i + 50) * 2.6;
+    const span  = CH + 80;
+    const y = CH + 40 - (((s * speed) + (FGH.hash(i) * span)) % span);
+    const x = FGH.hash(i + 3) * CW + Math.sin(s * .5 + i) * 22;
+    const fl = .55 + .45 * Math.sin(s * 5 + i * 1.7);
+    const a = (.10 + .55 * FGH.hash(i + 7)) * fl * intensity;
+    if (a <= .003) continue;
+    const g = cx.createRadialGradient(x, y, 0, x, y, size * 6);
+    g.addColorStop(0, 'rgba(120,255,180,' + a + ')');
+    g.addColorStop(.4, 'rgba(43,255,136,' + (a * .5) + ')');
+    g.addColorStop(1, 'rgba(43,255,136,0)');
+    cx.fillStyle = g;
+    cx.beginPath(); cx.arc(x, y, size * 6, 0, 6.2832); cx.fill();
+  }
+}
+
+/* ── MASTER RENDER ───────────────────────────────────────────────── */
+const hud = document.getElementById('hud');
+const fadeout = document.getElementById('fadeout');
+const TARGET = cut.target;
+
+function render(tIn){
+  const t = clamp(tIn, 0, TARGET);
+
+  /* particle intensity follows the active segment */
+  let pi = 0.22;
+  for (const s of SEGS){
+    if (t >= s.start - XF && t <= s.start + s.dur){
+      if (s.mod === 'ignition') pi = Math.max(pi, .92);
+      else if (s.mod === 'endCard') pi = Math.max(pi, .42);
+      else if (s.mod === 'optimizerCommand') pi = Math.max(pi, .5);
+    }
+  }
+  drawParticles(t, pi);
+
+  /* segments + crossfade */
+  SEGS.forEach((s, i) => {
+    const isLast = i === SEGS.length - 1;
+    const a = s.start, b = s.start + s.dur;
+    const fo = isLast ? 1 : XF;
+    let o = 0;
+    if (t >= a - XF && t <= b)
+      o = Math.min(clamp((t - (a - XF)) / XF, 0, 1), clamp((b - t) / fo, 0, 1));
+    s.layer.style.opacity = o;
+    s.layer.style.display = o > 0 ? 'flex' : 'none';
+    if (o > 0){
+      const lt = clamp(t - a, 0, s.dur);
+      const enter = easeOut(clamp(lt / 600, 0, 1));
+      s.layer.style.transform = 'scale(' + (1.04 - .04 * enter) + ')';
+      FG.modules[s.mod].update(s.layer, lt, s.dur, s.opts);
+    }
+  });
+
+  /* insert thought-flashes */
+  INS.forEach(ins => {
+    if (t >= ins.at && t <= ins.at + ins.dur){
+      ins.layer.style.display = 'block';
+      FG.inserts.update(ins.layer, t - ins.at, ins.dur);
+    } else {
+      ins.layer.style.display = 'none';
+    }
+  });
+
+  hud.style.opacity = env(t, 300, TARGET - 300, 400, 500) * .9;
+  fadeout.style.opacity = clamp((t - (TARGET - 650)) / 650, 0, 1);
+}
+
+/* ── PUBLIC API ──────────────────────────────────────────────────── */
+window.__render = ms => render(ms);
+window.__duration = TARGET / 1000;
+window.__posterMs = (cut.posterFrac || 0.5) * TARGET;
+window.__cutInfo = {
+  name:CUT_NAME, audience:cut.audience, offer:cut.offer,
+  cta:cut.cta, brand:cut.brand, duration:TARGET / 1000,
+  scenes:SEGS.map(s => s.mod),
+  inserts:INS.map(i => i.kind),
+};
+
+if (/[?&]render=1/.test(location.search)){
+  render(0);
+  window.__ready = true;
+} else {
+  let start = null;
+  (function loop(ts){
+    if (start === null) start = ts;
+    render((ts - start) % TARGET);
+    requestAnimationFrame(loop);
+  })(performance.now());
+}
+</script>
+</body>
+</html>

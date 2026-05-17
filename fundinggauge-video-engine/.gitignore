@@ -1,6 +1,10 @@
 node_modules/
 .tmp-frames/
 .frames/
-.preview/
+.smoke/
+.verify/
+.preview*/
+.preview*.png
+.smoke-test.mp4
 video-output/render.log
-video-output/_*_silent.mp4
+video-output/_*.mp4
