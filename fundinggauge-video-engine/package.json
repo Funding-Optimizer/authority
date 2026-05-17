@@ -1,0 +1,14 @@
+{
+  "name": "fundinggauge-video-engine",
+  "version": "1.0.0",
+  "description": "FUNDINGGAUG≡™ launch video asset system — deterministic HTML scene render pipeline",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node scripts/render.mjs",
+    "capture": "node scripts/capture.mjs"
+  },
+  "dependencies": {
+    "puppeteer": "^25.0.2"
+  }
+}

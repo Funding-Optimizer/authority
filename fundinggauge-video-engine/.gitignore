@@ -1,0 +1,6 @@
+node_modules/
+.tmp-frames/
+.frames/
+.preview/
+video-output/render.log
+video-output/_*_silent.mp4
